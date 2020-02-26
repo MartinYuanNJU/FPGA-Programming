@@ -1,0 +1,6 @@
+module VideoMem(
+	input [] row,
+	input [] col,
+	input wren,
+	output [] data
+	);

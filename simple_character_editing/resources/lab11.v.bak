@@ -1,0 +1,40 @@
+module lab09Pic(clkin,rst,reset,clkout,hsync,vsync,blank,vga_r,vga_g,vga_b,vga_sync);
+input clkin;
+input rst;
+input reset;
+wire [11:0] vga_data;
+wire [9:0] h_addr;
+wire [9:0] v_addr;
+output clkout;
+output hsync;
+output vsync;
+output blank; 
+output [7:0] vga_r;
+output [7:0] vga_g;
+output [7:0] vga_b;
+output reg vga_sync;
+assign vag_sync=1'b0;
+
+clkgen #(25000000) my_vgaclk(clkin,rst,1'b1,clkout);
+
+colorRam color(
+	.address({h_addr,v_addr[8:0]}),
+	.clock(clkin),
+	.q(vga_data)
+);
+
+vga_ctrl picture(
+	.pclk(clkout),
+	.reset(reset),
+	.vga_data({vga_data[11:8],4'b0000,vga_data[7:4],4'b0000,vga_data[3:0],4'b0000}),
+	.h_addr(h_addr),
+	.v_addr(v_addr),
+	.hsync(hsync),
+	.vsync(vsync),
+	.valid(blank),
+	.vga_r(vga_r),
+	.vga_g(vga_g),
+	.vga_b(vga_b)
+);
+
+endmodule

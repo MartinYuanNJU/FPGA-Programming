@@ -1,0 +1,48 @@
+module info_frame(
+	input reset,
+	input start,
+	input [13:0] presscount,
+	input [6:0] addr,
+	output reg [7:0]info_ascii
+);
+
+reg [7:0] info [99:0];
+
+initial
+begin
+	$readmemh("info.txt",info,0,99);
+end
+
+always @ (*)
+begin
+	if(reset==1)
+	begin
+		info[73]=0;
+		info[74]=0;
+		info[75]=0;
+		info[76]=0;
+	end
+	else
+	begin
+		if(start==0)
+		begin
+			info[62]=112;
+			info[67]=100;
+		end
+		else
+		begin
+			info[62]=0;
+			info[67]=0;
+			info[73]=(presscount/1000)+48;
+			info[74]=((presscount/100)%10)+48;
+			info[75]=((presscount/10)%10)+48;
+			info[76]=(presscount%10)+48;
+		end
+	end
+	if(addr>99)
+		info_ascii=0;
+	else
+		info_ascii=info[addr];
+end
+
+endmodule

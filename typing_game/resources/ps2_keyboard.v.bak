@@ -1,0 +1,113 @@
+module ps2_keyboard(clk,clrn,ps2_clk,ps2_data,data,
+							ready, enter, backspace, shift);
+	input clk,clrn,ps2_clk,ps2_data;
+	reg [7:0] ascii_data;
+	reg [7:0] buf_data;
+	output reg [7:0] data;
+	output reg ready;
+	output shift;
+	reg shift_on;
+	output enter;
+	output backspace;
+	//output reg overflow; // fifo overflow
+	// internal signal, for test
+	reg [9:0] buffer; // ps2_data bits
+	reg [3:0] count; // count ps2_data bits
+	// detect falling edge of ps2_clk
+	reg [2:0] ps2_clk_sync;
+	reg endcode;
+(* ram_init_file = "scancode.mif" *) reg [7:0] scancode [255:0];
+
+	always @(posedge clk) begin
+		ps2_clk_sync <= {ps2_clk_sync[1:0],ps2_clk};
+	end
+
+	wire sampling = ps2_clk_sync[2] & ~ps2_clk_sync[1];
+
+	always @(posedge clk) begin
+		if (clrn == 0) begin // reset
+			count <= 0; ready<= 0;
+		end else if (sampling) begin
+			if (count == 4'd10) begin
+				if ((buffer[0] == 0) && // start bit
+					(ps2_data) && // stop bit
+					(^buffer[9:1])) begin // odd parity
+					if(buffer[8:1] == 8'hf0) begin
+						ready <= 0;
+						buf_data <= buffer[8:1];
+						endcode <= 1;
+					end
+					else if(endcode != 1)
+					begin
+						if(buffer[8:1] == 8'h12 || buffer[8:1] == 8'h59)
+						begin
+							shift_on <= 1;
+							buf_data <= buffer[8:1];
+							ready <= 1'b1;
+						end
+						else
+						begin
+							ascii_data <= scancode[buffer[8:1]];
+							buf_data <= buffer[8:1];
+							ready <= 1'b1;
+						end
+					end
+					else begin
+						if(buffer[8:1] == 8'h12 || buffer[8:1] == 8'h59) shift_on <= 0;
+						//ascii_data <= 0;
+						buf_data <= 0;
+						//buffer <= 0;
+						endcode <= 0;
+						ready <= 0;
+					end
+				end
+				count <= 0; // for next
+			end else begin
+				buffer[count] <= ps2_data; // store ps2_data
+				count <= count + 3'b1;
+			end
+		end else	ready <= 1'b0;
+	end
+assign enter = (buf_data == 8'h5a) && ~endcode;
+assign backspace = (buf_data == 8'h66) && ~endcode;
+assign shift = shift_on && (buf_data == 8'h12 || buf_data == 8'h59);
+
+always @ (ascii_data)
+begin
+	if(shift_on == 1)
+	begin
+		if(ascii_data >= 8'h61 && ascii_data <= 8'h7a) data <= ascii_data - 32;
+		else
+		begin
+			case(ascii_data)
+				39: data <= ascii_data - 5;
+				44: data <= ascii_data + 16;
+				45: data <= ascii_data + 50;
+				46: data <= ascii_data + 16;
+				47: data <= ascii_data + 16;
+				48: data <= ascii_data - 7;
+				49: data <= ascii_data - 16;
+				50: data <= ascii_data + 14;
+				51: data <= ascii_data - 16;
+				52: data <= ascii_data - 16;
+				53: data <= ascii_data - 16;
+				54: data <= ascii_data + 40;
+				55: data <= ascii_data - 17;
+				56: data <= ascii_data - 14;
+				57: data <= ascii_data - 17;
+				59: data <= ascii_data - 1;
+				61: data <= ascii_data - 18;
+				91: data <= ascii_data + 32;
+				92: data <= ascii_data + 32;
+				93: data <= ascii_data + 32;
+				96: data <= ascii_data + 30;
+
+				default: data <= ascii_data;
+			endcase
+		end
+	end
+	else data <= ascii_data;
+end
+
+endmodule
+ 

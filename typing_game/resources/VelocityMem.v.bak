@@ -1,0 +1,20 @@
+module VelocityMem(
+	input [6:0] row,
+	input [6:0] col,
+	input wren,
+	input [1:0]data_in,
+	output [1:0] data_out
+	);
+	
+	reg [1:0] velocity_mem [69:0];
+	
+always @ (row or col)
+begin
+	if(wren == 1) velocity_mem[row*70+col] = data_in;
+	/*if(rden == 1) data_out = video_mem[row*70+col];
+	else data_out = 0;*/
+end
+
+assign data_out = velocity_mem[row*70+col];
+
+endmodule

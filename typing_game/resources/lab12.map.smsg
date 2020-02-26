@@ -1,0 +1,1 @@
+Warning (10268): Verilog HDL information at assign_vgadata.v(47): always construct contains both blocking and non-blocking assignments File: D:/My_design/lab12/assign_vgadata.v Line: 47

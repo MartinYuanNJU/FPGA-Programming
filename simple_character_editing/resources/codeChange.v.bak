@@ -1,0 +1,61 @@
+module codeChange(code,shift,ctrl,outcode);
+input [7:0]code;
+input shift;
+input ctrl;
+reg [7:0]tempcode;
+output [7:0]outcode;
+always @ (*)
+begin
+case(code)
+	8'b00010110:tempcode=8'b00110001;
+	8'b00011110:tempcode=8'b00110010;
+	8'b00100110:tempcode=8'b00110011;
+	8'b00100101:tempcode=8'b00110100;
+	8'b00101110:tempcode=8'b00110101;
+	8'b00110110:tempcode=8'b00110110;
+	8'b00111101:tempcode=8'b00110111;
+	8'b00111110:tempcode=8'b00111000;
+	8'b01000110:tempcode=8'b00111001;
+	8'b01000101:tempcode=8'b00110000;
+	28:tempcode=97;
+	50:tempcode=98;
+	33:tempcode=99;
+	35:tempcode=100;
+	36:tempcode=101;
+	43:tempcode=102;
+	52:tempcode=103;
+	51:tempcode=104;
+	67:tempcode=105;
+	59:tempcode=106;
+	66:tempcode=107;
+	75:tempcode=108;
+	58:tempcode=109;
+	49:tempcode=110;
+	68:tempcode=111;
+	77:tempcode=112;
+	21:tempcode=113;
+	45:tempcode=114;
+	27:tempcode=115;
+	44:tempcode=116;
+	60:tempcode=117;
+	42:tempcode=118;
+	29:tempcode=119;
+	34:tempcode=120;
+	53:tempcode=121;
+	26:tempcode=122;
+	default:tempcode=0;
+endcase
+if(shift==1)
+begin
+	if(tempcode>=97&&tempcode<=122)
+		tempcode=tempcode-32;
+	else if(tempcode>=49&&tempcode<=57)
+		tempcode=tempcode-16;
+	else if(tempcode==48)
+		tempcode=41;
+end
+else if(ctrl==1&&tempcode>=97&&tempcode<=122)
+	tempcode=tempcode-96;
+end
+assign outcode=tempcode;
+endmodule

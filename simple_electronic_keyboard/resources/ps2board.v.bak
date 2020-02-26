@@ -1,0 +1,107 @@
+module ps2board(clk,clrn,ps2_clk,ps2_data,signalOut,numOut,offOut,roundOut,shiftOut,ctrlOut);
+input clk,clrn,ps2_clk,ps2_data;
+reg [7:0] data;
+reg [9:0] buffer;
+reg [3:0] count;
+reg [2:0] ps2_clk_sync;
+reg [7:0] num;
+reg off;
+reg isEnd;
+reg isShift;
+reg isCtrl;
+reg round;
+output [7:0]signalOut;
+output [7:0]numOut;
+output offOut;
+output roundOut;
+output shiftOut;
+output ctrlOut;
+initial
+begin
+	off=1;
+	count=0;
+	num=0;
+	data=0;
+	round=0;
+	isEnd=0;
+	isShift=0;
+	isCtrl=0;
+end
+always @ (posedge clk) 
+begin
+	ps2_clk_sync <= {ps2_clk_sync[1:0],ps2_clk};
+end
+wire sampling = ps2_clk_sync[2] & ~ps2_clk_sync[1];
+always @ (posedge clk)
+begin
+	if(clrn==0)
+	begin
+		count<=0; 
+	end
+	else if(sampling)
+	begin
+		if(count == 4'd10)
+		begin
+			if((buffer[0] == 0) && (ps2_data) && (^buffer[9:1]))
+				count <= 0;
+		end
+		else
+		begin
+			buffer[count] <= ps2_data;
+			count <= count + 3'b1;
+		end
+	end
+end
+always @ (posedge clk)
+begin
+	if(clrn==0)
+	begin
+		off<=1;
+		num<=0;
+		isEnd<=0;
+		round<=0;
+		data<=0;
+		isShift<=0;
+		isCtrl<=0;
+	end
+	else if((count==4'd10) && (sampling) && (buffer[0]==0) && (ps2_data) && (^buffer[9:1]))
+	begin
+		if(buffer[8:1]==8'b11110000)
+		begin
+			isEnd<=1;
+			off<=1;
+			num<=(num+1)%100;
+			if(num==99)
+				round<=1;
+			else
+				round<=0;
+		end
+		else
+		begin
+			if(isEnd==0)
+			begin
+				off<=0;
+				data<=buffer[8:1];
+				if(buffer[8:1]==8'h12||buffer[8:1]==8'h59)
+					isShift<=1;
+				else if(buffer[8:1]==8'h14)
+					isCtrl<=1;
+			end
+			else
+			begin
+				if(buffer[8:1]==8'h12||buffer[8:1]==8'h59)
+					isShift<=0;
+				else if(buffer[8:1]==8'h14)
+					isCtrl<=0;
+				isEnd<=0;
+			end
+		end
+	end
+end
+assign signalOut=data;
+assign numOut=num;
+assign offOut=off;
+assign roundOut=round;
+assign shiftOut=isShift;
+assign ctrlOut=isCtrl;
+endmodule

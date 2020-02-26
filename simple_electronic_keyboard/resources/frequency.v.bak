@@ -1,0 +1,5 @@
+module frequency(signal,off,outfreq);
+input [7:0]signal;
+input off;
+reg [15:0]freq;
+output [15:0]outfreq;
